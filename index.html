@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search for Data</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <div>
+        <label>Please select the directory with your replays</label>      
+        <input type="file" id="leagueInstallPath" webkitdirectory />
+    </div>
+    <div>
+        <input type="text" placeholder="Your Name or Code" id="playerOneName" required/>
+        <input type="text" placeholder="Your Character" id="playerOneCharacter"/>
+            <label for="stage">Select Stage:</label>
+            <select name="stage" id="stage">
+                <option value="">Select Stage</option>
+                <option value="Battle Field">Battlefield</option>
+                <option value="Final Destination">Final Destination</option>
+                <option value="Pokemon Stadium">Pokemon Stadium</option>
+                <option value="Fountain of Dreams">Fountain of Dreams</option>
+                <option value="Dreamland">Dreamland</option>
+                <option value="Yoshi's Story">Yoshi's Story</option>
+            </select>    
+    </div>
+    <div>
+        <input type="text" placeholder="Opponent's Name or Code" id="playerTwoName" />
+        <input type="text" placeholder="Opponent's Character" id="playerTwoCharacter"/>
+    </div>
+
+    <div>
+        <button onclick="searchForMatches()">Get Stats </button>
+    </div>
+
+    <div id="foo"></div>
+    <script src="renderer.js"></script>
+</body>
+</html>
+
