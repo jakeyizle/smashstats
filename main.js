@@ -1,10 +1,11 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, ipcRenderer } = require('electron')
 const { default: SlippiGame } = require('@slippi/slippi-js');
 const fs = require ('fs');
 const ConversionFrequency = require('./conversionFrequency');
+const GameFunctions = require('./games');
+const { exec } = require("child_process");
 
 var win;
-var fileNames;
 
 function createWindow () {
   win.loadFile('index.html');
@@ -59,14 +60,11 @@ async function getReplays(path) {
 
 ipcMain.handle('searchForMatches', async (event, searchCriteria) => {
     return getReplays(searchCriteria.directory).then((replays) => {
-      let games = [];
-      let conversionDict = new Map();
       let conversionFrequencies = [];
-
-      console.log(searchCriteria);
       for (let i = 0; i < replays.length; i++) {
           let playerIndex = null;
           const game = new SlippiGame(replays[i].path);
+
           if (game.getMetadata().players[0].names.netplay == searchCriteria.playerName || game.getMetadata().players[0].names.code == searchCriteria.playerName) {
             playerIndex = 0;
           }
@@ -74,11 +72,8 @@ ipcMain.handle('searchForMatches', async (event, searchCriteria) => {
             playerIndex = 1;
           }          
           if (playerIndex == 1 || playerIndex == 0) {
-            let settings = game.getSettings();
-            let data = {...game.getStats(), ...game.getMetadata(), settings}
-            delete data.settings.players;
-            games.push(data);
 
+            let settings = game.getSettings();
             let gameConversions = game.getStats().conversions.filter(x => x.playerIndex == playerIndex);
            
             gameConversions.forEach((gameConversion) => {
@@ -96,22 +91,77 @@ ipcMain.handle('searchForMatches', async (event, searchCriteria) => {
               if (addNew) {
                 conversionFrequencies.push(conversionFrequency);
               }
-              
-              // if (conversionDict.has(moves)) {
-              //   conversionDict.get(moves).val++;
-              // } else {
-              //   conversionDict.set(moves, {val: 1});
-              // }
-
             })
           }          
       }
-      console.log(conversionFrequencies); 
+      // console.log(conversionFrequencies); 
       return JSON.stringify(conversionFrequencies.sort((a, b) => b.frequency - a.frequency));
     })
 
 })
 
+
+ipcMain.handle('searchForConversions', async (event, searchCriteria) => {
+  return getReplays(searchCriteria.directory).then((replays) => {
+    let conversions = [];
+    for (let i = 0; i < replays.length; i++) {
+        let playerIndex = null;
+        const game = new SlippiGame(replays[i].path);
+
+        if (game.getMetadata().players[0].names.netplay == searchCriteria.playerName || game.getMetadata().players[0].names.code == searchCriteria.playerName) {
+          playerIndex = 0;
+        }
+        if (game.getMetadata().players[1].names.netplay == searchCriteria.playerName || game.getMetadata().players[1].names.code == searchCriteria.playerName) {
+          playerIndex = 1;
+        }          
+        if (playerIndex == 1 || playerIndex == 0) {
+          let gameConversions = game.getStats().conversions.filter(x => x.playerIndex == playerIndex);
+          gameConversions.forEach((gameConversion) => {
+            let data = {
+              "conversion": gameConversion,
+              "filePath": replays[i].path,
+              "startFrame": gameConversion.startFrame,
+              "endFrame": gameConversion.endFrame
+            }
+            conversions.push(data);
+          })
+          
+        }          
+    }
+    // console.log(conversionFrequencies); 
+    return JSON.stringify(conversions.sort((a, b) => b.conversion.moves.length- a.conversion.moves.length));
+  })
+})
+
+ipcMain.handle('playConversion', async (event, conversion) => {
+  const dolphinPath = "C:\\Users\\18135\\AppData\\Roaming\\Slippi Desktop App\\dolphin\\Dolphin.exe"
+  const isoPath = "D:\\Games\\Dolphin Isos\\Super Smash Bros. Melee (USA) (En,Ja) (Rev 2).nkit.iso"
+  var replayCommand = `"${dolphinPath}" -i tempMoments.json -b -e "${isoPath}"`;
+  var output = {
+    "mode": "queue",
+    "replay": "",
+    "isRealTimeMode": false,
+    "outputOverlayFiles": true,
+    "queue": []
+    };
+    var queueMessage = {
+      "path":conversion.filePath,
+      "startFrame": conversion.startFrame,
+      "endFrame": conversion.endFrame
+    };
+    output.queue.push(queueMessage);
+    console.log(replayCommand);
+    console.log(JSON.stringify(output));
+    fs.writeFileSync("tempMoments.json", JSON.stringify(output));
+    exec(replayCommand, (error) => {
+      //dolphin will exit, and then the command will error
+      //then this fires - so this is how we time it (since opening a million dolphins doesnt work so well)
+      if (error) {
+          console.log(`error - but actually good!`);                               
+          return;
+      }
+  })
+})
 
 async function getFiles(path = "./") {
     const entries = fs.readdirSync(path, { withFileTypes: true });

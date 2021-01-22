@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <title>Search for Data</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -33,6 +34,15 @@
     </div>
 
     <div id="foo"></div>
+    <div id="vapp">  
+        <ol>
+            <li v-for="conversion in conversions">
+                {{ conversion.conversion.moves.length }} - {{ conversion.conversion.didKill}}
+                <button v-on:click="playConversion(conversion)">Play conversion</button>
+            </li>
+            
+        </ol>
+    </div>
     <script src="renderer.js"></script>
 </body>
 </html>

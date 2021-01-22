@@ -8,6 +8,18 @@ let message = {
     "stage": '',
     "directory": '',
 }
+const vueApp = new Vue({
+    el: '#vapp',
+    data: {
+        conversions: null
+      },
+      methods: {
+          playConversion: function (conversion, event) {
+              console.log(conversion);
+              ipcRenderer.invoke('playConversion', conversion);              
+          }
+      }
+  })
 
 function searchForMatches() {
     message.playerName = document.getElementById('playerOneName').value;
@@ -20,19 +32,10 @@ function searchForMatches() {
     const regExp = /(.*\\)/;
     const match = regExp.exec(document.getElementById('leagueInstallPath').files[0].path)[0];
     message.directory = match;
-    ipcRenderer.invoke('searchForMatches', message).then((result) => {
+    ipcRenderer.invoke('searchForConversions', message).then((result) => {
         var bar = JSON.parse(result);
-        console.log(bar);
-        var list = document.createElement('ul');
-        for (var i = 0; i < bar.length; i++) {
-            var item = document.createElement('li');
-            var otherItem = document.createElement('li');
-            item.appendChild(document.createTextNode(bar[i].moveNames));
-            otherItem.appendChild(document.createTextNode("doot"));
-            list.appendChild(item);
-            list.appendChild(otherItem);                        
-        }
-        document.getElementById('foo').appendChild(list);
+        console.log(bar);        
+        vueApp.conversions = bar;
         if (result === 'err') {
             //do error stuff
         }
