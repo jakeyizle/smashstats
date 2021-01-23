@@ -4,6 +4,7 @@
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <title>Search for Data</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="style.css" />
 </head>
 <body>
     <div>
@@ -33,16 +34,44 @@
         <button onclick="searchForMatches()">Get Stats </button>
     </div>
 
-    <div id="foo"></div>
-    <div id="vapp">  
-        <ol>
-            <li v-for="conversion in conversions">
-                {{ conversion.conversion.moves.length }} - {{ conversion.conversion.didKill}}
-                <button v-on:click="playConversion(conversion)">Play conversion</button>
-            </li>
-            
-        </ol>
+    <script type="text/x-template" id="grid-template">
+        <table>
+          <thead>
+            <tr>
+              <th v-for="key in columns"
+                @click="sortBy(key)"
+                :class="{ active: sortKey == key }">
+                {{ key | capitalize }}
+                <span class="arrow" :class="sortOrders[key] > 0 ? 'asc' : 'dsc'">
+                </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="entry in filteredHeroes">
+              <td v-for="key in columns">
+                {{entry[key]}}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </script>
+    </head>
+    <body>
+      <!-- demo root element -->
+      <div id="demo">
+      <div v-if="conversions">
+        <form id="search">
+          Search <input name="query" v-model="searchQuery" />
+        </form>
+        <demo-grid
+          :heroes="gridData"
+          :columns="gridColumns"
+          :filter-key="searchQuery"
+        >
+        </demo-grid>
     </div>
+      </div>
     <script src="renderer.js"></script>
 </body>
 </html>
