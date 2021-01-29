@@ -1,4 +1,6 @@
-const { ipcRenderer } = require('electron')
+const { ipcRenderer } = require('electron');
+const {searchForConversions, playConversion} = require('./test');
+const ProgressBar = require('electron-progressbar');
 
 let message = {
     "playerName": '',
@@ -16,8 +18,16 @@ function prettyConversions(conversions) {
     let prettyData = [];
     conversions.forEach((conversion) => {
         let data = {
+            "openingType": conversion.conversion.openingType,
             "moveCount": conversion.conversion.moves.length,
-            "killedOpponent": conversion.conversion.didKill
+            "killedOpponent": conversion.conversion.didKill,
+            "length": Math.round(100 * (conversion.conversion.endFrame - conversion.conversion.startFrame)/60)/100,
+            "damageDone": Math.round(1 * conversion.conversion.endPercent - conversion.conversion.startPercent)/1,
+            replayData: {
+              "filePath": conversion.filePath,
+              "startFrame": conversion.conversion.startFrame,
+              "endFrame": conversion.conversion.endFrame
+            }
         }
         prettyData.push(data);
     })
@@ -31,15 +41,9 @@ const vueApp = new Vue({
     data: {
         conversions: "",
         searchQuery: "",
-        gridColumns: ["moveCount", "killedOpponent"],
+        gridColumns: ["openingType", "moveCount", "killedOpponent", "length", "damageDone"],
         gridData: []
-    },
-      methods: {
-          playConversion: function (conversion, event) {
-              console.log(conversion);
-              ipcRenderer.invoke('playConversion', conversion);              
-          }          
-      }
+    }         
   })
 
 
@@ -96,12 +100,18 @@ const vueApp = new Vue({
       sortBy: function(key) {
         this.sortKey = key;
         this.sortOrders[key] = this.sortOrders[key] * -1;
+      },
+      playReplay: function(conversion) {
+        console.log('PLAYING REPLAY!')
+        console.log(conversion);
+        ipcRenderer.invoke('playConversion', conversion.replayData);
       }
     }
   });
 
 
 function searchForMatches() {
+  
     message.playerName = document.getElementById('playerOneName').value;
     message.playerCharacter = document.getElementById('playerOneCharacter').value;
     message.opponentName = document.getElementById('playerTwoName').value;
@@ -112,13 +122,16 @@ function searchForMatches() {
     const regExp = /(.*\\)/;
     const match = regExp.exec(document.getElementById('leagueInstallPath').files[0].path)[0];
     message.directory = match;
-    ipcRenderer.invoke('searchForConversions', message).then((result) => {
+    searchForConversions(message).then((result) => {  
         var bar = JSON.parse(result);
         console.log(bar);        
         vueApp.conversions = bar;
         vueApp.gridData = prettyConversions(bar);
+        ipcRenderer.invoke('complete').then(() => {
         if (result === 'err') {
             //do error stuff
         }
+      })
     })
+
 }

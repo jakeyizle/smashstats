@@ -52,6 +52,7 @@
               <td v-for="key in columns">
                 {{entry[key]}}
               </td>
+              <td><button @click="playReplay(entry)">Play highlight</button></td>
             </tr>
           </tbody>
         </table>

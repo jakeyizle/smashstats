@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@slippi/slippi-js": "^5.1.1",
+    "electron-progressbar": "^2.0.0",
     "electron-squirrel-startup": "^1.0.0",
     "vue-table-dynamic": "^0.4.3"
   },
