@@ -1,4 +1,5 @@
 const { default: SlippiGame } = require('@slippi/slippi-js');
+const db = require('electron-db');
 
 const minimumGameTime = 1200; //20 seconds
 const skipCPUmatches = true;

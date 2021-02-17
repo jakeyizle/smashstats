@@ -22,8 +22,10 @@
   },
   "dependencies": {
     "@slippi/slippi-js": "^5.1.1",
+    "electron-db": "^0.15.7",
     "electron-progressbar": "^2.0.0",
     "electron-squirrel-startup": "^1.0.0",
+    "object-hash": "^2.1.1",
     "vue-table-dynamic": "^0.4.3"
   },
   "config": {

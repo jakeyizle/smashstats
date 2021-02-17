@@ -13,10 +13,11 @@ let message = {
 
 
 function prettyConversions(conversions) {
-  console.log(123);
   if (conversions) {
     let prettyData = [];
     conversions.forEach((conversion) => {
+      if (conversion) { 
+      console.log(conversion);
         let data = {
             "openingType": conversion.conversion.openingType,
             "moveCount": conversion.conversion.moves.length,
@@ -30,6 +31,7 @@ function prettyConversions(conversions) {
             }
         }
         prettyData.push(data);
+      }
     })
     console.log(prettyData);
     return prettyData;
@@ -104,14 +106,14 @@ const vueApp = new Vue({
       playReplay: function(conversion) {
         console.log('PLAYING REPLAY!')
         console.log(conversion);
-        ipcRenderer.invoke('playConversion', conversion.replayData);
+       playConversion(conversion.replayData);
       }
     }
   });
 
 
 function searchForMatches() {
-  
+
     message.playerName = document.getElementById('playerOneName').value;
     message.playerCharacter = document.getElementById('playerOneCharacter').value;
     message.opponentName = document.getElementById('playerTwoName').value;

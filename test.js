@@ -1,6 +1,9 @@
 const { default: SlippiGame } = require('@slippi/slippi-js');
 const fs = require ('fs');
 const { ipcRenderer } = require('electron');
+const db = require('electron-db');
+var hash = require('object-hash');
+const { exec } = require("child_process");
 
 
 async function getReplays(path) {
@@ -14,11 +17,25 @@ async function searchForConversions(searchCriteria) {
   return getReplays(searchCriteria.directory).then(async (replays) => {
     await ipcRenderer.invoke('loading', replays.length);
     let conversions = [];
+    const cachedConversions = await getCachedConversions();
     for (let i = 0; i < replays.length; i++) {
       await ipcRenderer.invoke('increment');
       console.log(i);
       let playerIndex = null;
       const game = new SlippiGame(replays[i].path);
+
+      if (!game.getMetadata()) {
+        continue;
+      }
+      const hashGame = {
+        "hash": hash(game)
+      }
+      const isGameCached = await isGameInDB(hashGame);
+      if (isGameCached) {
+        console.log(`${i} is in DB`)
+        continue;
+      }
+      await insertGame(hashGame);
 
       if (game.getMetadata().players[0].names.netplay == searchCriteria.playerName || game.getMetadata().players[0].names.code == searchCriteria.playerName) {
         playerIndex = 0;
@@ -35,12 +52,14 @@ async function searchForConversions(searchCriteria) {
             "startFrame": gameConversion.startFrame,
             "endFrame": gameConversion.endFrame
           };
+          insertConversion(data);
           conversions.push(data);
         });
 
       }
-    }
-    return JSON.stringify(conversions.sort((a, b) => b.conversion.moves.length - a.conversion.moves.length));
+    }    
+    const allConversions = conversions.concat(cachedConversions);
+    return JSON.stringify(allConversions.sort((a, b) => b.conversion.moves.length - a.conversion.moves.length));
   })
 }
 
@@ -93,7 +112,46 @@ async function getFiles(path = "./") {
 
   return files;
 }
+async function getAllGames() {
+  return db.getAll('games', (succ, data) => {
+    console.log(`getAllGames - ${succ}`)
+    console.log(data);
+  })
+}
 
+function isGameInDB(hash) {
+  return new Promise((resolve, reject) => {
+  db.getRows('games', {"hash": hash.hash}, (isInDB, result) => {
+    console.log('isGameInDB');
+    console.log(result);
+    console.log(result.length);
+    resolve(result.length);
+  })  
+})
+}
+
+
+
+async function insertGame(hash) {
+  console.log('INSERT');
+  console.log(hash);
+  return db.insertTableContent('games', hash, (succ, err) => {
+  });
+}
+async function insertConversion(conversion) {
+  if (db.valid('conversions')) {
+    return db.insertTableContent('conversions', conversion, (succ, err) => {
+    })    
+  }
+}
+
+async function getCachedConversions() {
+  return new Promise((resolve, reject) => {
+   db.getAll('conversions', (succ, data) => {
+     resolve(data);
+    })
+  })
+}
 module.exports = {
   searchForConversions: searchForConversions,
   playConversion: playConversion
